@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'chat_page.dart';
+import 'secure_chat_page.dart';
 import 'officer_performance.dart';
 import 'crime_dashboard_page.dart';
 import 'emergency_alert_page.dart';
+import 'login_page.dart'; // ✅ import หน้า LoginPage
 import 'main.dart' show IncidentHomePage;
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final String currentUser; // ✅ รับชื่อผู้ใช้จาก LoginPage
+
+  const DashboardPage({super.key, required this.currentUser});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -47,17 +50,45 @@ class _DashboardPageState extends State<DashboardPage> {
     } catch (_) {}
   }
 
+  /// ✅ Logout function
+  void _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to log out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Poliz System',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          'Poliz System — ${widget.currentUser}', // ✅ แสดงชื่อผู้ใช้ที่ล็อกอินอยู่
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          // 🔔 Notifications
           Stack(
             children: [
               IconButton(
@@ -67,7 +98,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   _markAllAsRead();
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const EmergencyAlertPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const EmergencyAlertPage(),
+                    ),
                   ).then((_) => _getNewAlertCount());
                 },
               ),
@@ -97,11 +130,21 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
             ],
           ),
+
+          // 🚪 Logout Button
+          IconButton(
+            tooltip: 'Logout',
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+          ),
         ],
       ),
+
+      // ---------- Dashboard cards ----------
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 700;
+
           final cards = [
             _buildDashboardCard(
               icon: Icons.notifications_active,
@@ -111,7 +154,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 _markAllAsRead();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const EmergencyAlertPage()),
+                  MaterialPageRoute(
+                    builder: (_) => const EmergencyAlertPage(),
+                  ),
                 );
               },
             ),
@@ -120,10 +165,11 @@ class _DashboardPageState extends State<DashboardPage> {
               title: 'Analytics Report',
               color: Colors.blueAccent,
               onTap: () {
-                _markAllAsRead();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const OfficerPerformancePage()),
+                  MaterialPageRoute(
+                    builder: (_) => const OfficerPerformancePage(),
+                  ),
                 );
               },
             ),
@@ -134,7 +180,10 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SecureChatPage()),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        SecureChatPage(currentUser: widget.currentUser),
+                  ),
                 );
               },
             ),
@@ -145,7 +194,8 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const CrimeDashboardPage()),
+                  MaterialPageRoute(
+                    builder: (_) => const CrimeDashboardPage()),
                 );
               },
             ),
@@ -156,7 +206,8 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const IncidentHomePage()),
+                  MaterialPageRoute(
+                    builder: (_) => const IncidentHomePage()),
                 );
               },
             ),
@@ -169,19 +220,19 @@ class _DashboardPageState extends State<DashboardPage> {
                 constraints: const BoxConstraints(maxWidth: 1000),
                 child: isWide
                     ? Wrap(
-                  spacing: 20,
-                  runSpacing: 20,
-                  alignment: WrapAlignment.start,
-                  children: cards,
-                )
+                        spacing: 20,
+                        runSpacing: 20,
+                        alignment: WrapAlignment.start,
+                        children: cards,
+                      )
                     : Column(
-                  children: cards
-                      .map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: c,
-                  ))
-                      .toList(),
-                ),
+                        children: cards
+                            .map((c) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: c,
+                                ))
+                            .toList(),
+                      ),
               ),
             ),
           );
@@ -202,7 +253,8 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Card(
         elevation: 1,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: InkWell(
           onTap: onTap,
           child: Padding(
@@ -222,18 +274,6 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  void _openPlaceholder(BuildContext context, String title) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(title)),
-          body: const Center(child: Text('Coming soon...')),
         ),
       ),
     );
