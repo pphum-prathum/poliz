@@ -9,7 +9,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // อนุญาตให้ Flutter (ที่รันบน localhost หรือเครื่องอื่นๆ) เข้าถึงได้
         registry.addMapping("/api/v1/**")
                 .allowedOrigins("*") // อนุญาตทุก Origin
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");

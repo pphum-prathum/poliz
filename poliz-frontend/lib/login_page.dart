@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'styles/app_theme.dart';
 import 'styles/styles.dart';
 import 'dashboard_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
@@ -13,12 +16,57 @@ class _LoginPageState extends State<LoginPage> {
   final userCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool obscured = true;
+  bool loading = false;
+
+  /// ✅ ฟังก์ชันเชื่อม backend ตรวจ username / password
+  Future<void> _login() async {
+    final username = userCtrl.text.trim();
+    final password = passCtrl.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both username and password')),
+      );
+      return;
+    }
+
+    setState(() => loading = true);
+    try {
+      final res = await http.post(
+        Uri.parse('http://localhost:8080/api/chats/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'name': username, 'password': password}),
+      );
+
+      if (res.statusCode == 200) {
+        final user = jsonDecode(res.body);
+        // ✅ ล็อกอินสำเร็จ → ไปหน้า Dashboard
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => DashboardPage(currentUser: user['name']),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${res.body}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Cannot connect to server: $e')),
+      );
+    } finally {
+      setState(() => loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
-        // top branding
+        // ---------- Top branding ----------
         Align(
           alignment: Alignment.topCenter,
           child: Padding(
@@ -28,14 +76,21 @@ class _LoginPageState extends State<LoginPage> {
               children: const [
                 _GlowShield(),
                 SizedBox(height: 18),
-                Text('Poliz System', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(
+                  'Poliz System',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                ),
                 SizedBox(height: 8),
-                Text('Secure Law Enforcement Portal', style: TextStyle(color: AppColors.textSecondary)),
+                Text(
+                  'Secure Law Enforcement Portal',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
               ],
             ),
           ),
         ),
-        // form
+
+        // ---------- Login form ----------
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
@@ -48,20 +103,23 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Username', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white,)),
-                    gap8,
+                    const Text('Username',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, color: Colors.white)),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: userCtrl,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
-                          hintText: 'Enter your ID',
-                          hintStyle: TextStyle(color: Colors.white70),
+                        hintText: 'Enter your ID',
+                        hintStyle: TextStyle(color: Colors.white70),
                       ),
                     ),
-                    gap14(),
-                    const Text('Password', style: TextStyle(fontWeight: FontWeight.w700,
-                      color: Colors.white,)),
-                    gap8,
+                    const SizedBox(height: 14),
+                    const Text('Password',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, color: Colors.white)),
+                    const SizedBox(height: 8),
                     TextField(
                       controller: passCtrl,
                       obscureText: obscured,
@@ -70,27 +128,37 @@ class _LoginPageState extends State<LoginPage> {
                         hintText: 'Enter your password',
                         hintStyle: const TextStyle(color: Colors.white70),
                         suffixIcon: IconButton(
-                          icon: Icon(obscured ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => obscured = !obscured),
+                          icon: Icon(
+                            obscured ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.white70,
+                          ),
+                          onPressed: () =>
+                              setState(() => obscured = !obscured),
                         ),
                       ),
                     ),
-                    gap20,
+                    const SizedBox(height: 24),
+
+                    // ---------- Login button ----------
                     SizedBox(
                       height: 48,
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const DashboardPage()),
-                          );
-                        },
-                        child: const Text('Access System'),
+                        onPressed: loading ? null : _login,
+                        child: loading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2)
+                            : const Text('Access System'),
                       ),
                     ),
-                    gap16,
-                    const Center(child: Text('Authorized personnel only', style: TextStyle(color: AppColors.textSecondary))),
+
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: Text(
+                        'Authorized personnel only',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -100,12 +168,11 @@ class _LoginPageState extends State<LoginPage> {
       ]),
     );
   }
-
-  SizedBox gap14() => const SizedBox(height: 14);
 }
 
 class _GlowShield extends StatelessWidget {
   const _GlowShield();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -113,7 +180,10 @@ class _GlowShield extends StatelessWidget {
       height: 92,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(colors: [Color(0xFF60A5FA), Colors.transparent], radius: .8),
+        gradient: RadialGradient(
+          colors: [Color(0xFF60A5FA), Colors.transparent],
+          radius: .8,
+        ),
       ),
       child: const Center(
         child: CircleAvatar(

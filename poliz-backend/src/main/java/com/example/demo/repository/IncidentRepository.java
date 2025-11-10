@@ -6,6 +6,5 @@ import java.util.List;
 
 public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
-    // ดึงเฉพาะรายการที่ isNew = true
     List<Incident> findByIsNewTrue();
 }
