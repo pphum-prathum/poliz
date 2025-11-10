@@ -16,7 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Base-Choice Coverage (Option B): collapse the four note groups into one
+ * Base-Choice Coverage
  * "Notes Severity" characteristic with 5 partitions:
  *   None (0), Minor(+10), Crowd(+15), Serious(+20), Weapon(+25).
  *
@@ -51,52 +51,44 @@ public class IncidentServiceTest {
         return i;
     }
 
-    // --------------------------
     // BC-0: Base test
-    // --------------------------
     @Test
     void BC0_baseChoice_LOW_10pts() {
         Incident out = service.addNewIncident(baseIncident());
         assertTrue(out.isNew());
-        assertEquals(10, out.getScore());           // base for "Other"
+        assertEquals(10, out.getScore());
         assertEquals("LOW", out.getRankLevel());
         assertFalse(out.isRanked());
         verify(repository).save(out);
     }
 
-    // --------------------------
-    // Time (2-1) => Night
-    // --------------------------
+    // Time => Night
     @Test
     void time_night_adds10_LOW_20pts() {
         Incident i = baseIncident();
         i.setTime(LocalDateTime.of(2025, 1, 1, 23, 0));
         Incident out = service.addNewIncident(i);
-        assertEquals(20, out.getScore());           // 10 + 10
+        assertEquals(20, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
-    // --------------------------
-    // Place (2-1) => Vulnerable
-    // --------------------------
+    // Place => Vulnerable
     @Test
     void place_vulnerable_adds8_LOW_18pts() {
         Incident i = baseIncident();
         i.setPlace("Central Park");                 // contains "park"
         Incident out = service.addNewIncident(i);
-        assertEquals(18, out.getScore());           // 10 + 8
+        assertEquals(18, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
-    // --------------------------
-    // Notes Severity (5-1) => +10, +15, +20, +25
-    // --------------------------
+    // Notes Severity
     @Test
     void notes_minor_plus10_LOW_20pts() {
         Incident i = baseIncident();
         i.setNotes("child injured");                // matches injur*/child
         Incident out = service.addNewIncident(i);
-        assertEquals(20, out.getScore());           // 10 + 10
+        assertEquals(20, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
@@ -105,7 +97,7 @@ public class IncidentServiceTest {
         Incident i = baseIncident();
         i.setNotes("mass crowd incident");          // matches mass/crowd
         Incident out = service.addNewIncident(i);
-        assertEquals(25, out.getScore());           // 10 + 15
+        assertEquals(25, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
@@ -114,7 +106,7 @@ public class IncidentServiceTest {
         Incident i = baseIncident();
         i.setNotes("one person unconscious");       // life-threatening
         Incident out = service.addNewIncident(i);
-        assertEquals(30, out.getScore());           // 10 + 20
+        assertEquals(30, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
@@ -123,20 +115,17 @@ public class IncidentServiceTest {
         Incident i = baseIncident();
         i.setNotes("suspect with weapon");          // weapon/explosive keywords
         Incident out = service.addNewIncident(i);
-        assertEquals(35, out.getScore());           // 10 + 25
+        assertEquals(35, out.getScore());
         assertEquals("LOW", out.getRankLevel());
     }
 
-    // --------------------------
-    // Type (7-1) => switch to the other 6 partitions
-    // (Keep other characteristics at base values: Day, Normal, Notes=None)
-    // --------------------------
+    // Type => switch to the other 6 type
     @Test
     void type_fire_min75_HIGH() {
         Incident i = baseIncident();
         i.setType("Fire");
         Incident out = service.addNewIncident(i);
-        assertEquals(75, out.getScore());           // floor rule
+        assertEquals(75, out.getScore());
         assertEquals("HIGH", out.getRankLevel());
         assertTrue(out.isRanked());
     }
@@ -146,7 +135,7 @@ public class IncidentServiceTest {
         Incident i = baseIncident();
         i.setType("Medical Emergency");
         Incident out = service.addNewIncident(i);
-        assertEquals(55, out.getScore());           // floor rule
+        assertEquals(55, out.getScore());
         assertEquals("MEDIUM", out.getRankLevel());
         assertTrue(out.isRanked());
     }
@@ -156,8 +145,8 @@ public class IncidentServiceTest {
         Incident i = baseIncident();
         i.setType("Armed Robbery");
         Incident out = service.addNewIncident(i);
-        assertEquals(80, out.getScore());           // 80 (no severe notes)
-        assertEquals("HIGH", out.getRankLevel());   // >=70
+        assertEquals(80, out.getScore());
+        assertEquals("HIGH", out.getRankLevel());
         assertTrue(out.isRanked());
     }
 
