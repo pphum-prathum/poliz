@@ -322,7 +322,7 @@ class GroupChatPage extends StatefulWidget {
 class _GroupChatPageState extends State<GroupChatPage> {
   final _msgCtrl = TextEditingController();
   final List<_Msg> _messages = [];
-
+  
   // ✅ ใช้ localhost สำหรับเชื่อม backend Spring Boot
   final String _baseUrl = 'http://localhost:8080/api/chats';
   Timer? _pollTimer;
@@ -331,8 +331,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
   void initState() {
     super.initState();
     _fetchMessages();
-    _pollTimer =
-        Timer.periodic(const Duration(seconds: 3), (_) => _fetchMessages());
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchMessages());
   }
 
   @override
@@ -344,29 +343,21 @@ class _GroupChatPageState extends State<GroupChatPage> {
 
   Future<void> _fetchMessages() async {
     try {
-      final res = await http
-          .get(Uri.parse('$_baseUrl/${widget.currentUser}/${widget.receiverName}/messages'));
+      final res = await http.get(Uri.parse('$_baseUrl/${widget.currentUser}/${widget.receiverName}/messages'));
       if (res.statusCode == 200) {
         final List data = jsonDecode(res.body);
         if (!mounted) return;
 
-        final newMessages = data
-            .map((m) => _Msg(
-                  initials: (m['sender'] == widget.currentUser)
-                      ? 'YOU'
-                      : m['sender'].substring(0, 2).toUpperCase(),
-                  sender: m['sender'],
-                  text: m['text'],
-                  time: m['time'],
-                ))
-            .toList();
+        final newMessages = data.map((m) => _Msg(
+          initials: (m['sender'] == widget.currentUser) ? 'YOU' : m['sender'].substring(0, 2).toUpperCase(),
+          sender: m['sender'],
+          text: m['text'],
+          time: m['time'],
+        )).toList();
 
         setState(() {
           for (final msg in newMessages) {
-            if (!_messages.any((old) =>
-                old.text == msg.text &&
-                old.time == msg.time &&
-                old.sender == msg.sender)) {
+            if (!_messages.any((old) => old.text == msg.text && old.time == msg.time && old.sender == msg.sender)) {
               _messages.add(msg);
             }
           }
@@ -421,29 +412,20 @@ class _GroupChatPageState extends State<GroupChatPage> {
                 final m = _messages[i];
                 final isMe = m.initials == 'YOU';
                 return Align(
-                  alignment:
-                      isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isMe ? kBlue700 : kNavy800,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
-                      crossAxisAlignment: isMe
-                          ? CrossAxisAlignment.end
-                          : CrossAxisAlignment.start,
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                       children: [
-                        Text(m.sender,
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.white70)),
-                        Text(m.text,
-                            style: const TextStyle(color: Colors.white)),
-                        Text(m.time,
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.white54)),
+                        Text(m.sender, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text(m.text, style: const TextStyle(color: Colors.white)),
+                        Text(m.time, style: const TextStyle(fontSize: 11, color: Colors.white54)),
                       ],
                     ),
                   ),
@@ -465,13 +447,16 @@ class _GroupChatPageState extends State<GroupChatPage> {
                         hintText: 'Type a message…',
                         filled: true,
                         isDense: true,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(onPressed: _send, child: const Icon(Icons.send)),
+                  // ปรับปุ่มให้ disabled ถ้าไม่มีข้อความ
+                  FilledButton(
+                    onPressed: _msgCtrl.text.isEmpty ? null : _send, // ถ้าไม่มีข้อความจะทำให้ปุ่มไม่สามารถคลิกได้
+                    child: const Icon(Icons.send),
+                  ),
                 ],
               ),
             ),
@@ -481,6 +466,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     );
   }
 }
+
 
 class _Msg {
   final String initials;
