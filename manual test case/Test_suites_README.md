@@ -24,8 +24,8 @@ Login page, Chat list page, Secure Chat page
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
 |---:|---|---|---|---|---|---|  
-| 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | Pass |  |  
-| 2 | Enter "Ploy" in the **search box**. | `Ploy` | The system displays a chat with the name **Ploy** in the search results. | Pass |  |  
+| 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | System logs in successfully and navigates to the secure chat page. | Pass |  |  
+| 2 | Enter "Ploy" in the **search box**. | `Ploy` | The system displays a chat with the name **Ploy** in the search results. | The system displays a chat with the name **Ploy** in the search results. | Pass |  |  
 
 ### Post-conditions
 The **Ploy** chat appears in the search results.
@@ -54,8 +54,8 @@ Login page, Chat list page, Secure Chat page
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
 |---:|---|---|---|---|---|---|  
-| 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | Pass |  |  
-| 2 | Enter "eiei" in the **search box**. | `eiei` | No chats appear, and the message "Not Found" is displayed. | Pass |  |  
+| 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | System logs in successfully and navigates to the secure chat page. | Pass |  |  
+| 2 | Enter "eiei" in the **search box**. | `eiei` | No chats appear, and the message "Not Found" is displayed. | No chats appear, and the message "Not Found" is displayed. | Pass |  |  
 
 ### Post-conditions
 No chat with the name "eiei" is found, and the "Not Found" message appears.
