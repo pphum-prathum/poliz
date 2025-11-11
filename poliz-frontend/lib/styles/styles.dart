@@ -60,10 +60,21 @@ class AppBadge extends StatelessWidget {
 
 class SectionTitle extends StatelessWidget {
   final String text;
-  const SectionTitle(this.text, {super.key});
+  final Color? color;
+  const SectionTitle(this.text, {this.color, super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.titleLarge);
+    return Text(
+      text,
+      style: Theme.of(context)
+          .textTheme
+          .titleMedium
+          ?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: color ?? AppColors.textPrimary,
+      ),
+    );
   }
 }
 

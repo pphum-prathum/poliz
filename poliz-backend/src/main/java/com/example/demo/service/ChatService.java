@@ -15,7 +15,7 @@ public class ChatService {
     public ChatService() {
         Chat c1 = new Chat("Pim", "Ploy");
         Chat c2 = new Chat("Nine", "Earn");
-        Chat c3 = new Chat("Parn", "Sunny");
+        Chat c3 = new Chat("Pran", "Sunny");
         Chat c4 = new Chat("Ploy", "Earn");
 
         // ตั้งค่าเริ่มต้นข้อความ
