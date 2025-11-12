@@ -29,5 +29,4 @@ public class Incident {
     private int score;          // คะแนนตัวเลข (0-100) ที่คำนวณโดย Backend
     private String rankLevel;   // ระดับ (CRITICAL, HIGH, MEDIUM, LOW) ที่คำนวณโดย Backend
     // ===================================================
-
 }
