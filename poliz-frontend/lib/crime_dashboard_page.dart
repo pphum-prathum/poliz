@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
 
 import 'styles/app_theme.dart';
 import 'styles/styles.dart';
@@ -16,27 +16,48 @@ class CrimeDashboardPage extends StatefulWidget {
 }
 
 class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
+  // ------------------ CONFIG ------------------
+
   static const String _hostIp = 'localhost';
   static const String _hostPort = '8080';
   static const String _baseUrl =
       'http://$_hostIp:$_hostPort/api/v1/crime-incidents';
 
-  final types = const ['All Types', 'Robbery', 'Accident', 'Violence', 'Arson'];
-  String selected = 'All Types';
+  static const String _allTypesLabel = 'All Types';
 
-  // all incidents from backend
+  static const List<String> _types = [
+    _allTypesLabel,
+    'Traffic Accident',
+    'Medical Emergency',
+    'Fire',
+    'Armed Robbery',
+    'Violent Crime',
+    'Disturbance',
+    'Other',
+  ];
+
+  // ------------------ STATE ------------------
+
+  String _selectedType = _allTypesLabel;
+
+  /// All incidents from backend
   List<_Inc> _allIncidents = [];
-  // incidents after filter (for list + map)
+
+  /// Incidents after filter (for list + map)
   List<_Inc> _visibleIncidents = [];
 
   bool _loading = false;
   String? _error;
+
+  // ------------------ LIFECYCLE ------------------
 
   @override
   void initState() {
     super.initState();
     _fetchIncidents();
   }
+
+  // ------------------ NETWORK ------------------
 
   Future<void> _fetchIncidents() async {
     setState(() {
@@ -49,12 +70,13 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
 
       if (res.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(res.body);
-        final all = jsonList.map((e) => _Inc.fromJson(e)).toList();
+        final incidents =
+        jsonList.map((e) => _Inc.fromJson(e as Map<String, dynamic>)).toList();
 
         setState(() {
-          _allIncidents = all;
+          _allIncidents = incidents;
         });
-        _applyFilter(); // recompute visible list
+        _applyFilter();
       } else {
         setState(() {
           _error = 'Server error: ${res.statusCode}';
@@ -71,26 +93,35 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
     }
   }
 
-  void _applyFilter() {
-    List<_Inc> list;
+  // ------------------ FILTER & COUNTS ------------------
 
-    if (selected == 'All Types') {
-      list = List.of(_allIncidents);
+  void _applyFilter() {
+    final List<_Inc> filtered;
+
+    if (_selectedType == _allTypesLabel) {
+      filtered = List<_Inc>.of(_allIncidents);
     } else {
-      list = _allIncidents.where((i) => i.type == selected).toList();
+      filtered = _allIncidents
+          .where((i) => i.type == _selectedType)
+          .toList();
     }
 
     setState(() {
-      _visibleIncidents = list;
+      _visibleIncidents = filtered;
     });
   }
 
   void _setFilter(String type) {
     setState(() {
-      selected = type;
+      _selectedType = type;
     });
     _applyFilter();
   }
+
+  int _countByType(String type) =>
+      _allIncidents.where((i) => i.type == type).length;
+
+  // ------------------ UI: INCIDENT DETAILS ------------------
 
   void _showIncidentDetails(_Inc inc) {
     showDialog(
@@ -108,11 +139,14 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // X button
+                // Close button
                 Align(
                   alignment: Alignment.topRight,
                   child: IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.close,
+                      color: AppColors.textSecondary,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -121,20 +155,23 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
                   inc.type,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,     // 👈 visible title
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.place_outlined,
-                        size: 18, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.place_outlined,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         inc.place,
                         style: const TextStyle(
-                          color: AppColors.textSecondary, // 👈 light grey
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -143,8 +180,11 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.schedule,
-                        size: 18, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.schedule,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       inc.time,
@@ -157,8 +197,11 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.info_outline,
-                        size: 18, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.info_outline,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Status: ${inc.status}',
@@ -194,24 +237,16 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
     );
   }
 
+  // ------------------ BUILD ------------------
+
   @override
   Widget build(BuildContext context) {
-    // dynamic counts from backend data
-    final robberyCount =
-        _allIncidents.where((i) => i.type == 'Robbery').length;
-    final accidentCount =
-        _allIncidents.where((i) => i.type == 'Accident').length;
-    final violenceCount =
-        _allIncidents.where((i) => i.type == 'Violence').length;
-    final arsonCount =
-        _allIncidents.where((i) => i.type == 'Arson').length;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Crime Dashboard')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // REAL MAP
+          // Map
           DarkCard(
             child: SizedBox(
               height: 260,
@@ -219,12 +254,16 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
             ),
           ),
           gap16,
-          const Text('Crime Type Filter',
-              style: TextStyle(color: AppColors.textSecondary)),
+
+          const Text(
+            'Crime Type Filter',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
           gap8,
+
           DropdownButtonFormField<String>(
-            value: selected,
-            items: types
+            value: _selectedType,
+            items: _types
                 .map(
                   (t) => DropdownMenuItem(
                 value: t,
@@ -233,48 +272,75 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
             )
                 .toList(),
             onChanged: (v) {
-              _setFilter(v ?? selected);
+              if (v != null) {
+                _setFilter(v);
+              }
             },
-            decoration: const InputDecoration(hintText: 'All Types'),
+            decoration: const InputDecoration(hintText: _allTypesLabel),
           ),
           gap16,
+
+          // Summary cards
           Wrap(
             spacing: 16,
             runSpacing: 16,
             children: [
               _StatCard(
-                count: robberyCount,
-                label: 'Robbery',
+                count: _countByType('Traffic Accident'),
+                label: 'Traffic Accident',
                 color1: 0xFFFF7A45,
                 color2: 0xFFFFA940,
-                onTap: () => _setFilter('Robbery'),
+                onTap: () => _setFilter('Traffic Accident'),
               ),
               _StatCard(
-                count: accidentCount,
-                label: 'Accident',
+                count: _countByType('Medical Emergency'),
+                label: 'Medical Emergency',
                 color1: 0xFFFFB02E,
                 color2: 0xFFFFD166,
-                onTap: () => _setFilter('Accident'),
+                onTap: () => _setFilter('Medical Emergency'),
               ),
               _StatCard(
-                count: violenceCount,
-                label: 'Violence',
-                color1: 0xFFB06AF7,
-                color2: 0xFFDB7DFF,
-                onTap: () => _setFilter('Violence'),
-              ),
-              _StatCard(
-                count: arsonCount,
-                label: 'Arson',
+                count: _countByType('Fire'),
+                label: 'Fire',
                 color1: 0xFFEF476F,
                 color2: 0xFFF78C6B,
-                onTap: () => _setFilter('Arson'),
+                onTap: () => _setFilter('Fire'),
+              ),
+              _StatCard(
+                count: _countByType('Armed Robbery'),
+                label: 'Armed Robbery',
+                color1: 0xFFB06AF7,
+                color2: 0xFFDB7DFF,
+                onTap: () => _setFilter('Armed Robbery'),
+              ),
+              _StatCard(
+                count: _countByType('Violent Crime'),
+                label: 'Violent Crime',
+                color1: 0xFF118AB2,
+                color2: 0xFF06D6A0,
+                onTap: () => _setFilter('Violent Crime'),
+              ),
+              _StatCard(
+                count: _countByType('Disturbance'),
+                label: 'Disturbance',
+                color1: 0xFF073B4C,
+                color2: 0xFF26547C,
+                onTap: () => _setFilter('Disturbance'),
+              ),
+              _StatCard(
+                count: _countByType('Other'),
+                label: 'Other',
+                color1: 0xFF8D99AE,
+                color2: 0xFFBFC0C0,
+                onTap: () => _setFilter('Other'),
               ),
             ],
           ),
           gap16,
+
           const SectionTitle('Recent Incidents'),
           gap12,
+
           if (_loading)
             const Center(
               child: Padding(
@@ -313,7 +379,7 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
     );
   }
 
-  // ---------------- MAP ----------------
+  // ------------------ MAP ------------------
 
   Widget _buildMap() {
     final withCoords = _visibleIncidents
@@ -370,7 +436,8 @@ class _CrimeDashboardPageState extends State<CrimeDashboardPage> {
 class _StatCard extends StatelessWidget {
   final int count;
   final String label;
-  final int color1, color2;
+  final int color1;
+  final int color2;
   final VoidCallback? onTap;
 
   const _StatCard({
@@ -430,7 +497,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-/// model for JSON from backend
+/// Model for JSON from backend
 class _Inc {
   final String type;
   final String place;
@@ -494,8 +561,11 @@ class _IncidentTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(Icons.schedule,
-                    size: 16, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.schedule,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   inc.time,
@@ -506,12 +576,15 @@ class _IncidentTile extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            // second row: icon + place, vertically centered
+            // second row: icon + place
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Icon(Icons.place_outlined,
-                    size: 16, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.place_outlined,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(

@@ -26,9 +26,9 @@ public class IncidentController {
     // GET: Get Notification Count (ใช้สำหรับ Badge เลขสีแดง)
     @GetMapping("/new/count")
     public ResponseEntity<Integer> getNewIncidentCount() {
-        return ResponseEntity.ok(service.getNewIncidentCount());
+        int count = service.getNewIncidentCount();
+        return ResponseEntity.ok(count);
     }
-
     // GET: Get All Incidents (ใช้สำหรับหน้า List)
     @GetMapping
     public ResponseEntity<List<Incident>> getAllIncidents() {

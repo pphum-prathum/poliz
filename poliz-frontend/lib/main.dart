@@ -32,12 +32,16 @@ class Incident {
   final String place;
   final DateTime time;
   final String notes;
-  
+
   // =========================================================
   // ✨ NEW: รับค่า Score และ RankLevel ที่คำนวณจาก Backend โดยตรง
   // =========================================================
   final int score;
   final String rankLevel;
+
+  // ✨ พิกัดสำหรับแสดงบนแผนที่ (optional)
+  final double? latitude;
+  final double? longitude;
 
   Incident({
     required this.id,
@@ -47,6 +51,8 @@ class Incident {
     required this.notes,
     required this.score,
     required this.rankLevel,
+    this.latitude,
+    this.longitude,
   });
 
   // Helper method for API call: แปลง Incident เป็น JSON Map ที่ Backend ต้องการ
@@ -55,9 +61,11 @@ class Incident {
     return {
       'type': type,
       'place': place,
-      // ส่ง Local Time (ที่ผู้ใช้เลือก) ในรูปแบบ ISO 8601 String 
-      'time': time.toIso8601String(), 
+      // ส่ง Local Time (ที่ผู้ใช้เลือก) ในรูปแบบ ISO 8601 String
+      'time': time.toIso8601String(),
       'notes': notes,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -67,14 +75,16 @@ class Incident {
     DateTime parsedTime = DateTime.parse(json['time'] as String);
 
     return Incident(
-      id: json['id']?.toString() ?? 'N/A', 
+      id: json['id']?.toString() ?? 'N/A',
       type: json['type'] as String,
       place: json['place'] as String,
-      time: parsedTime, 
+      time: parsedTime,
       notes: json['notes'] as String,
       // รับค่าใหม่จาก Backend ที่คำนวณแล้ว
       score: json['score'] as int? ?? 0,
       rankLevel: json['rankLevel'] as String? ?? 'LOW',
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -86,6 +96,8 @@ class Incident {
     String? notes,
     int? score,
     String? rankLevel,
+    double? latitude,
+    double? longitude,
   }) {
     return Incident(
       id: id ?? this.id,
@@ -95,6 +107,8 @@ class Incident {
       notes: notes ?? this.notes,
       score: score ?? this.score,
       rankLevel: rankLevel ?? this.rankLevel,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }
@@ -116,8 +130,7 @@ class IncidentHomePage extends StatefulWidget {
 
 class _IncidentHomePageState extends State<IncidentHomePage> {
   // กำหนด Base URL ของ Spring Boot Backend
-  static const String _hostIp = 'localhost'; 
-
+  static const String _hostIp = 'localhost';
   static const String _hostPort = '8080';
   static const String _baseUrl = 'http://$_hostIp:$_hostPort/api/v1/events';
 
@@ -134,8 +147,12 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
   final _placeCtrl = TextEditingController();
   final _notesCtrl = TextEditingController();
   final _searchCtrl = TextEditingController();
+  // NEW: latitude / longitude inputs
+  final _latCtrl = TextEditingController();
+  final _lngCtrl = TextEditingController();
   String _type = 'Traffic Accident';
   DateTime _pickedTime = DateTime.now();
+
   final _types = const <String>[
     'Traffic Accident',
     'Medical Emergency',
@@ -149,9 +166,8 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadIncidents(); // โหลดข้อมูลเหตุการณ์ครั้งแรก
-    _getNewAlertCount(); // ดึงจำนวนแจ้งเตือนครั้งแรก
-    _applyRanking();
+    _loadIncidents();
+    _getNewAlertCount();
   }
 
   @override
@@ -159,6 +175,8 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
     _placeCtrl.dispose();
     _notesCtrl.dispose();
     _searchCtrl.dispose();
+    _latCtrl.dispose();
+    _lngCtrl.dispose();
     super.dispose();
   }
 
@@ -171,63 +189,94 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = json.decode(response.body);
+
         setState(() {
-          // โหลดข้อมูลทั้งหมดจาก Backend มา
-          _incidents.clear();
-          _incidents.addAll(jsonList.map((json) => Incident.fromJson(json)).toList());
-          _applyRanking(); // รัน Ranking (ตอนนี้แค่แคชคะแนน) หลังโหลดเสร็จ
+          _incidents
+            ..clear()
+            ..addAll(
+              jsonList
+                  .map((json) => Incident.fromJson(json as Map<String, dynamic>))
+                  .toList(),
+            );
+          _applyRanking();
         });
       } else {
-        print('Failed to load incidents: ${response.statusCode}');
+        debugPrint('Failed to load incidents. Status: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error connecting to backend: $e');
+      debugPrint('Error loading incidents: $e');
     }
   }
 
-  // 2. ดึงจำนวนแจ้งเตือนใหม่ (สำหรับ Badge)
+  // 2. ดึงจำนวนแจ้งเตือนใหม่ (isNew = true) จาก Backend
   Future<void> _getNewAlertCount() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/new/count'));
+      final response =
+      await http.get(Uri.parse('$_baseUrl/new/count'));
+
       if (response.statusCode == 200) {
-        final int count = int.parse(response.body);
+        final count = int.tryParse(response.body) ?? 0;
         setState(() {
           _newAlertCount = count;
         });
+      } else {
+        debugPrint('Failed to get new incident count. Status: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching new alert count: $e');
+      debugPrint('Error getting new incident count: $e');
     }
   }
 
-  // 3. ทำเครื่องหมายว่าอ่านแล้ว (เมื่อผู้ใช้กดดูแจ้งเตือน)
-  Future<void> _markAllAsRead() async {
+  // 3. Mark all as read (ใช้เมื่อเข้า Alerts page)
+  Future<void> markAllAsRead() async {
     try {
+      final response =
       await http.post(Uri.parse('$_baseUrl/mark-as-read'));
-      _getNewAlertCount(); // อัปเดต Badge ให้เป็น 0
+      if (response.statusCode == 204) {
+        await _getNewAlertCount();
+      } else {
+        debugPrint('Failed to mark all as read. Status: ${response.statusCode}');
+      }
     } catch (e) {
-      print('Error marking as read: $e');
+      debugPrint('Error marking all as read: $e');
     }
   }
 
-  // --- **ลบ Logic** และใช้ค่าจาก Model โดยตรง ---
-  // ฟังก์ชันนี้ถูกลดความซับซ้อนลงเหลือเพียงการคืนค่า score ที่โหลดมา
-  int _scoreFor(Incident i) {
-    return i.score;
+  // -------------------------------------------------------------
+  // Helpers for ranking view
+  // -------------------------------------------------------------
+
+  List<Incident> _viewIncidents() {
+    final query = _searchCtrl.text.trim().toLowerCase();
+    if (query.isEmpty) {
+      return _sortedByScore(_incidents);
+    }
+    final filtered = _incidents.where((i) {
+      final text =
+      '${i.id} ${i.type} ${i.place} ${i.notes}'.toLowerCase();
+      return text.contains(query);
+    }).toList();
+    return _sortedByScore(filtered);
   }
-  
-  // ฟังก์ชันนี้ใช้ rankLevel ในการกำหนดสีเท่านั้น
-  RankBand _bandFor(int score, String rankLevel) {
+
+  List<Incident> _sortedByScore(List<Incident> list) {
+    list.sort((a, b) => b.score.compareTo(a.score));
+    return list;
+  }
+
+  RankBand _rankBand(Incident i) {
+    final score = i.score;
+    final rankLevel = i.rankLevel;
     Color color;
     switch (rankLevel) {
       case 'CRITICAL':
-        color = Colors.red.shade600;
+        color = Colors.red.shade700;
         break;
       case 'HIGH':
-        color = Colors.orange.shade600;
+        color = Colors.orange.shade700;
         break;
       case 'MEDIUM':
-        color = Colors.amber.shade600;
+        color = Colors.amber.shade700;
         break;
       case 'LOW':
       default:
@@ -243,30 +292,19 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
       ..clear();
     for (final i in _incidents) {
       // แคชคะแนนที่คำนวณจาก Backend
-      _ranked[i.id] = i.score; 
+      _ranked[i.id] = i.score;
     }
     _lastRun = DateTime.now();
     setState(() {});
   }
 
-  List<Incident> _viewIncidents() {
-    final q = _searchCtrl.text.trim().toLowerCase();
-    final list = _incidents
-        .where((i) {
-      if (q.isEmpty) return true;
-      return [i.id, i.type, i.place, i.notes]
-          .any((f) => f.toLowerCase().contains(q));
-    })
-        .toList();
-
-    // เรียงตาม score ที่คำนวณจาก Backend โดยตรง (a.score)
-    list.sort((a, b) => b.score.compareTo(a.score));
-    return list;
-  }
+  // -------------------------------------------------------------
+  // UI interactions
+  // -------------------------------------------------------------
 
   String _fmtDateTime(DateTime t) {
-    // ⚠️ ใช้ t โดยตรงเพราะเป็นเวลา Local ที่ถูกต้อง
-    final local = t; 
+    // ใช้ t โดยตรงเพราะเป็นเวลา Local ที่ถูกต้อง
+    final local = t;
     final y = local.year.toString().padLeft(4, '0');
     final m = local.month.toString().padLeft(2, '0');
     final d = local.day.toString().padLeft(2, '0');
@@ -281,27 +319,55 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
     return List.generate(8, (_) => chars[r.nextInt(chars.length)]).join();
   }
 
+  double? _parseDoubleOrNull(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return null;
+    return double.tryParse(trimmed);
+  }
+
   Future<void> _pickDateTime(BuildContext context) async {
     final now = DateTime.now();
-    final d = await showDatePicker(
+    final date = await showDatePicker(
       context: context,
       initialDate: _pickedTime,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 1),
     );
-    if (d == null) return;
-    final t = await showTimePicker(
+    if (date == null) return;
+
+    final timeOfDay = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(_pickedTime),
     );
-    if (t == null) return;
+    if (timeOfDay == null) return;
 
     setState(() {
-      _pickedTime = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+      _pickedTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        timeOfDay.hour,
+        timeOfDay.minute,
+      );
     });
   }
 
-  // 4. แก้ไข: เปลี่ยนจากการเพิ่มลง List ภายใน เป็นการ POST ไป Backend
+  void _applySearch() {
+    setState(() {});
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    _applySearch();
+  }
+
+  // -------------------------------------------------------------
+  // Add & Rank
+  // -------------------------------------------------------------
+
+  // ฟังก์ชันนี้ไม่ใส่ AI ใน Flutter แล้ว แต่จะส่ง Incident ทั้งก้อนให้ Backend
+  // จากนั้น Backend จะคำนวณ Heuristic Score และ Rank ให้ แล้วตอบกลับมา
+  // ส่วน Flutter เพียงแค่ refresh list ใหม่ ไม่ต้องคำนวณเอง
   void _addIncident() async {
     if (_placeCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -310,42 +376,50 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
       return;
     }
 
+    // NEW: parse coordinate inputs (optional)
+    final lat = _parseDoubleOrNull(_latCtrl.text);
+    final lng = _parseDoubleOrNull(_lngCtrl.text);
+
     // 1. สร้าง Incident Object ที่จะส่งไป Backend
     final newIncident = Incident(
       id: _newId(), // ID นี้จะถูก Backend ทิ้งไป แต่เราเก็บไว้ใน Flutter ก่อน
       type: _type,
       place: _placeCtrl.text.trim(),
       // ถูกต้อง: _pickedTime เป็น Local Time อยู่แล้ว ปล่อยให้ toJson() จัดการแปลงเป็น Local time string เอง
-      time: _pickedTime, 
+      time: _pickedTime,
       notes: _notesCtrl.text.trim(),
-      // ค่าเหล่านี้จะไม่ถูกใช้ในการส่งไป Backend แต่ถูกบังคับใน constructor
+      // ค่า score / rankLevel ให้ Backend เป็นคนคำนวณ ไม่ต้องส่งจากฝั่งนี้
       score: 0,
       rankLevel: 'LOW',
+      latitude: lat,
+      longitude: lng,
     );
 
     try {
+      // เรียก Backend ผ่าน HTTP POST
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(newIncident.toJson()), // แปลงเป็น JSON ก่อนส่ง
+        body: json.encode(newIncident.toJson()), // ใช้ toJson() ที่เราสร้าง
       );
 
       if (response.statusCode == 200) {
         // สำเร็จ: Backend บันทึกข้อมูลแล้ว
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incident added successfully (via Backend)!')),
+          const SnackBar(content: Text('Incident added successfully!')),
         );
 
-        // 2. โหลดข้อมูลทั้งหมดจาก Backend ใหม่ เพื่อให้ List อัปเดต
-        _loadIncidents(); 
+        // โหลดข้อมูลทั้งหมดจาก Backend ใหม่ เพื่อให้ List อัปเดต
+        _loadIncidents();
 
-        // 3. ดึงจำนวนแจ้งเตือนใหม่ เพื่ออัปเดต Badge ทันที
-        _getNewAlertCount(); 
+        // ดึงจำนวนแจ้งเตือนใหม่ เพื่ออัปเดต Badge ทันที
+        _getNewAlertCount();
 
-        // 4. ล้างฟอร์ม
+        // ล้างฟอร์ม
         _placeCtrl.clear();
         _notesCtrl.clear();
-
+        _latCtrl.clear();
+        _lngCtrl.clear();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to add incident. Status: ${response.statusCode}')),
@@ -358,8 +432,12 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
     }
 
     // ล้างฟอร์มและอัปเดต UI (setState ถูกเรียกใน _loadIncidents แล้ว)
-    setState(() {}); 
+    setState(() {});
   }
+
+  // -------------------------------------------------------------
+  // Build
+  // -------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -367,73 +445,42 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'GoodPoliz: Incident Importance Ranking',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Incident Importance Ranking'),
         actions: [
-          // 🎯 แก้ไข: เปลี่ยนเป็น Icons.wifi_tethering เพื่อให้คล้ายกับรูปที่ให้มา
-          IconButton(
-            tooltip: 'Show Broadcast Status', // เปลี่ยน tooltip ตามไอคอนใหม่
-            onPressed: _applyRanking, // ยังคงผูกกับฟังก์ชัน AI Ranking เดิม
-            icon: Icon(Icons.wifi_tethering, color: Theme.of(context).colorScheme.primary),
-          ),
-          // 5. เพิ่ม Notification Badge
-          Stack(
-            children: [
-              IconButton(
-                tooltip: 'Emergency Alerts',
-                icon: const Icon(Icons.emergency_outlined, color: Colors.redAccent),
-                onPressed: () {
-                  // เมื่อกดปุ่ม ให้ Mark All As Read ก่อนเข้าหน้า Alerts
-                  _markAllAsRead(); 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const EmergencyAlertPage()),
-                  );
-                },
+          if (_lastRun != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: Text(
+                  'Last updated: ${_fmtDateTime(_lastRun!)}',
+                  style: const TextStyle(fontSize: 12),
+                ),
               ),
-              if (_newAlertCount > 0)
-                Positioned(
-                  right: 4,
-                  top: 4,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 18,
-                      minHeight: 18,
-                    ),
-                    child: Text(
-                      '$_newAlertCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-            ],
-          ),
+            )
         ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 900;
-          return Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: isWide
-                ? Row(
+          // แสดงแบบ 2 คอลัมน์เมื่อหน้าจอกว้าง
+          final wide = constraints.maxWidth >= 900;
+          if (wide) {
+            return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 2, child: _buildListCard(list)),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
+                  flex: 3,
+                  child: ListView(
+                    padding: const EdgeInsets.all(12.0),
+                    children: [
+                      _buildListCard(list),
+                    ],
+                  ),
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  flex: 2,
+                  child: ListView(
+                    padding: const EdgeInsets.all(12.0),
                     children: [
                       _buildFormCard(context),
                       const SizedBox(height: 12),
@@ -442,8 +489,10 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                   ),
                 ),
               ],
-            )
-                : ListView(
+            );
+          } else {
+            return ListView(
+              padding: const EdgeInsets.all(12.0),
               children: [
                 _buildListCard(list),
                 const SizedBox(height: 12),
@@ -451,18 +500,16 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                 const SizedBox(height: 12),
                 _buildHelpCard(),
               ],
-            ),
-          );
+            );
+          }
         },
       ),
     );
   }
 
   Widget _buildListCard(List<Incident> list) {
-    // ... (ส่วนโค้ด List Card เดิม) ...
     return Card(
       elevation: 1,
-
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
@@ -477,7 +524,8 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                   flex: 1,
                   child: Text(
                     'Incident List',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style:
+                    TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -487,14 +535,19 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                   flex: 2,
                   child: TextField(
                     controller: _searchCtrl,
-                    onChanged: (_) => setState(() {}),
+                    onChanged: (_) => _applySearch(),
                     decoration: const InputDecoration(
-                      //prefixIcon: Icon(Icons.search),
                       hintText: 'Search by id, type, place, notes…',
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
                   ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: _clearSearch,
+                  icon: const Icon(Icons.clear),
                 ),
               ],
             ),
@@ -511,44 +564,32 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                 ),
               )
             else
-              // **FIX: เปลี่ยนจาก Flexible/ListView.builder ซ้อนกันใน Column 
-              // ให้เป็น Expanded/ListView.builder เพื่อใช้พื้นที่ว่างที่เหลือ**
-              Expanded(
+              SizedBox(
+                height: 360,
                 child: ListView.builder(
-                  // ลบ shrinkWrap และ NeverScrollableScrollPhysics ออก เพราะตอนนี้มันคือ ListView หลัก
                   itemCount: list.length,
                   itemBuilder: (context, index) {
                     return _buildIncidentTile(list[index]);
                   },
                 ),
               ),
-              
+
             const SizedBox(height: 8),
 
-            // Footer status (no overflow now)
+            // Footer status
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Loaded ${list.length} incidents from Backend.',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    softWrap: false,
+                    'Loaded: ${list.length} incidents',
+                    style:
+                    const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _lastRun == null
-                        ? ''
-                        : 'Last AI run: ${_fmtDateTime(_lastRun!)}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
+                TextButton.icon(
+                  onPressed: _loadIncidents,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Refresh'),
                 ),
               ],
             ),
@@ -559,129 +600,50 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
   }
 
   Widget _buildIncidentTile(Incident i) {
-    // ⚠️ ใช้ค่า score และ rankLevel ที่โหลดมาตรงๆ
-    final score = i.score;
-    final rankLevel = i.rankLevel;
-    final band = _bandFor(score, rankLevel);
+    final band = _rankBand(i);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 2.0),
-            child: Icon(Icons.warning_amber_rounded, color: Colors.grey),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: 8,
-                  children: [
-                    Text(
-                      '#${i.id}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    ),
-                    Chip(
-                      label: Text(
-                        i.type,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      visualDensity: VisualDensity.compact,
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                      backgroundColor: const Color(0xFFF1F5F9),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 4,
-                  children: [
-                    _iconText(Icons.place_outlined, i.place),
-                    _iconText(Icons.schedule, _fmtDateTime(i.time)),
-                  ],
-                ),
-                if (i.notes.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2.0, right: 6),
-                        child: Icon(Icons.notes_outlined, size: 18),
-                      ),
-                      Expanded(
-                        child: Text(
-                          i.notes,
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: score / 100.0,
-                    minHeight: 10,
-                    backgroundColor: const Color(0xFFE5E7EB),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            children: [
-              Container(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: band.color,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  band.level,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${band.score}%',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _iconText(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18, color: Colors.black54),
-        const SizedBox(width: 4),
-        Flexible(
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: band.color,
+          foregroundColor: Colors.white,
           child: Text(
-            text,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            softWrap: false,
+            band.score.toString(),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ),
-      ],
+        title: Text(
+          '${i.type} @ ${i.place}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _fmtDateTime(i.time),
+              style: const TextStyle(fontSize: 12),
+            ),
+            if (i.notes.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                i.notes,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+        trailing: Text(
+          band.level,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: band.color,
+          ),
+        ),
+      ),
     );
   }
 
@@ -722,6 +684,36 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
               decoration: const InputDecoration(
                 labelText: 'Place',
                 hintText: 'e.g., Rama IX Rd, near Central Plaza',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // NEW: Latitude (optional)
+            TextField(
+              controller: _latCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: false,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Latitude',
+                hintText: 'e.g., 13.7563',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // NEW: Longitude (optional)
+            TextField(
+              controller: _lngCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: false,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Longitude',
+                hintText: 'e.g., 100.5018',
                 border: OutlineInputBorder(),
                 isDense: true,
               ),
@@ -769,7 +761,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                       SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          'Importance is AI-estimated (simulated). Always verify on dispatch.',
+                          'Importance is backend-estimated. Always verify on dispatch.',
                           style:
                           TextStyle(fontSize: 12, color: Colors.black54),
                         ),
@@ -792,7 +784,6 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
   }
 
   Widget _buildHelpCard() {
-    // ... (ส่วนโค้ด Help Card เดิม) ...
     return Card(
       elevation: 1,
       child: Padding(
@@ -817,7 +808,8 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '2) AI computes an importance score (0–100) and a level (LOW / MEDIUM / HIGH / CRITICAL).'),
+                '2) AI computes an importance score (0–100) and a level (LOW / MEDIUM / HIGH / CRITICAL).',
+              ),
             ),
             Align(
               alignment: Alignment.centerLeft,

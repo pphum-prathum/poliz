@@ -1,69 +1,51 @@
 package com.example.demo.controller;
 
-import com.example.demo.service.CrimeIncidentService;
-import com.example.demo.model.CrimeIncident;
 import com.example.demo.model.CrimeIncidentDto;
+import com.example.demo.model.Incident;
+import com.example.demo.service.IncidentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
-
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/v1/crime-incidents")
+@CrossOrigin
 public class CrimeIncidentController {
 
-    private final CrimeIncidentService service;
+    private final IncidentService incidentService;
 
-    public CrimeIncidentController(CrimeIncidentService service) {
-        this.service = service;
+    public CrimeIncidentController(IncidentService incidentService) {
+        this.incidentService = incidentService;
     }
 
-    // GET /api/v1/crime-incidents
-    // GET /api/v1/crime-incidents?type=Robbery
+    /**
+     * GET /api/v1/crime-incidents
+     * Optional: ?type=Traffic%20Accident
+     * This now returns incidents from the Incident table,
+     * formatted as CrimeIncidentDto for the dashboard.
+     */
     @GetMapping
-    public List<CrimeIncidentDto> getIncidents(
+    public ResponseEntity<List<CrimeIncidentDto>> getCrimeIncidents(
             @RequestParam(required = false) String type
     ) {
-        List<CrimeIncident> list =
-                (type == null || type.isBlank())
-                        ? service.getAllIncidents()
-                        : service.getIncidentsByType(type);
+        List<Incident> incidents = incidentService.getAllIncidents();
 
-        return list.stream()
-                .map(CrimeIncidentDto::fromEntity)
-                .toList();
-    }
+        // Optional in-memory filter by type
+        if (type != null && !type.isBlank()
+                && !"All Types".equalsIgnoreCase(type)) {
 
-    // POST /api/v1/crime-incidents
-    @PostMapping
-    public ResponseEntity<CrimeIncidentDto> createIncident(
-            @RequestBody CrimeIncidentDto dto
-    ) {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
-
-        CrimeIncident c = new CrimeIncident();
-        c.setType(dto.type());
-        c.setPlaceName(dto.placeName());
-
-        if (dto.time() != null && !dto.time().isBlank()) {
-            c.setIncidentTime(LocalTime.parse(dto.time(), fmt)); // expects "HH:mm"
-        } else {
-            c.setIncidentTime(LocalTime.now());
+            String normalizedType = type.trim().toLowerCase();
+            incidents = incidents.stream()
+                    .filter(i -> i.getType() != null
+                            && i.getType().trim().toLowerCase().equals(normalizedType))
+                    .toList();
         }
 
-        c.setDescription(dto.description());
-        c.setLatitude(dto.latitude());
-        c.setLongitude(dto.longitude());
+        List<CrimeIncidentDto> body = incidents.stream()
+                .map(CrimeIncidentDto::fromIncident)
+                .toList();
 
-        CrimeIncident saved = service.save(c);
-        CrimeIncidentDto body = CrimeIncidentDto.fromEntity(saved);
-
-        return ResponseEntity
-                .created(URI.create("/api/v1/crime-incidents/" + saved.getId()))
-                .body(body);
+        return ResponseEntity.ok(body);
     }
 }

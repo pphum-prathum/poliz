@@ -23,10 +23,10 @@ public class Incident {
     private boolean isNew = true;
     private boolean isRanked = false;
 
-    // ===================================================
-    // ✨ สิ่งที่ต้องเพิ่มเพื่อรองรับการจัดอันดับ 4 ระดับ
-    // ===================================================
-    private int score;          // คะแนนตัวเลข (0-100) ที่คำนวณโดย Backend
-    private String rankLevel;   // ระดับ (CRITICAL, HIGH, MEDIUM, LOW) ที่คำนวณโดย Backend
-    // ===================================================
+    private int score;
+    private String rankLevel;
+
+    private Double latitude;
+    private Double longitude;
+
 }

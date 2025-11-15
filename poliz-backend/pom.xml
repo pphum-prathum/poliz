@@ -71,32 +71,69 @@
 				</configuration>
 			</plugin>
 
-			<!-- Add JaCoCo plugin configuration for coverage reporting -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.7</version>
+
 				<executions>
+					<!-- Attach JaCoCo agent -->
 					<execution>
-						<id>prepare-agent</id> <!-- Unique execution ID -->
+						<id>prepare-agent</id>
 						<goals>
-							<goal>prepare-agent</goal> <!-- Instrument classes for coverage collection -->
+							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
+
+					<!-- Generate HTML report -->
 					<execution>
-						<id>generate-report</id> <!-- Unique execution ID -->
+						<id>report</id>
+						<phase>verify</phase>
 						<goals>
-							<goal>report</goal> <!-- Generate the coverage report after tests -->
+							<goal>report</goal>
 						</goals>
-						<phase>verify</phase> <!-- Generate report during the verify phase -->
+					</execution>
+
+					<!-- Enforce coverage only for selected classes -->
+					<execution>
+						<id>jacoco-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<!-- Check per CLASS, not entire bundle -->
+									<element>CLASS</element>
+
+									<!-- Only these classes are checked.
+                                         Adjust if your 3 suites are different. -->
+									<includes>
+										<include>com/example/demo/service/IncidentService</include>
+										<include>com/example/demo/controller/CrimeIncidentController</include>
+										<include>com/example/demo/controller/ChatController</include>
+									</includes>
+
+									<limits>
+										<!-- Line coverage >= 70% -->
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.70</minimum>
+										</limit>
+										<!-- Branch coverage >= 70% -->
+										<limit>
+											<counter>BRANCH</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.70</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
 					</execution>
 				</executions>
-				<configuration>
-					<check>
-						<lineRate>0.7</lineRate>  <!-- Minimum statement coverage 70% -->
-						<branchRate>0.7</branchRate> <!-- Minimum branch coverage 70% -->
-					</check>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
