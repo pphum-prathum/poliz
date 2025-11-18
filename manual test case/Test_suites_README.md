@@ -2,6 +2,10 @@
 # Project Name: Good Poliz
 
 ## Test Suite 1 – Secure Chat: User Search
+TC_USER_SEARCH_01 , TC_USER_SEARCH_02  
+
+---
+
 ### Test Case 1
 **Test Case ID:** TC_USER_SEARCH_01  
 **Test Priority:** High  
