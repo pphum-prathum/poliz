@@ -1,7 +1,7 @@
 
 # Project Name: Good Poliz
 
-## Test Case 1
+## Test Suite 1 – Secure Chat: User Search
 **Test Case ID:** TC_USER_SEARCH_01  
 **Test Priority:** High  
 **Module Name:** GoodPoliz: Secure Chat — User Search  
@@ -32,7 +32,6 @@ The **Ploy** chat appears in the search results.
 
 ---
 
-## Test Case 2
 **Test Case ID:** TC_USER_SEARCH_02  
 **Test Priority:** High  
 **Module Name:** GoodPoliz: Secure Chat — User Search  
@@ -62,7 +61,7 @@ No chat with the name "eiei" is found, and the "Not Found" message appears.
 
 ---
 
-## Test Case 3
+## Test Suite 2 – Incident Importance Ranking (Add & Rank Incident)
 **Test Case ID:** TC_INCIDENT_ADD_01  
 **Test Priority:** High  
 **Module Name:** GoodPoliz: Incident Importance Ranking  
@@ -99,7 +98,6 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Backend incid
 
 ---
 
-## Test Case 4
 **Test Case ID:** TC_INCIDENT_ADD_02  
 **Test Priority:** High  
 **Module Name:** GoodPoliz: Incident Importance Ranking  
