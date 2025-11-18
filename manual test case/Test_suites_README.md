@@ -16,11 +16,11 @@
 
 ---
 
-### Pre-conditions
+**Pre-conditions**
 - Users can log in and access the **Secure Chat** page.
 - The chat with the name **Ploy** exists.
 
-### Dependencies
+**Dependencies**
 Login page, Chat list page, Secure Chat page
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
@@ -28,7 +28,7 @@ Login page, Chat list page, Secure Chat page
 | 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | System logs in successfully and navigates to the secure chat page. | Pass |  |  
 | 2 | Enter "Ploy" in the **search box**. | `Ploy` | The system displays a chat with the name **Ploy** in the search results. | The system displays a chat with the name **Ploy** in the search results. | Pass |  |  
 
-### Post-conditions
+**Post-conditions**
 The **Ploy** chat appears in the search results.
 
 ---
@@ -47,10 +47,10 @@ The **Ploy** chat appears in the search results.
 
 ---
 
-### Pre-conditions
+**Pre-conditions**
 - Users can log in and access the **Secure Chat** page.
 
-### Dependencies
+**Dependencies**
 Login page, Chat list page, Secure Chat page
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
@@ -58,12 +58,16 @@ Login page, Chat list page, Secure Chat page
 | 1 | Log in and navigate to **Secure Chat**. | Email/Pass: **Nine / Nine** | System logs in successfully and navigates to the secure chat page. | System logs in successfully and navigates to the secure chat page. | Pass |  |  
 | 2 | Enter "eiei" in the **search box**. | `eiei` | No chats appear, and the message "Not Found" is displayed. | No chats appear, and the message "Not Found" is displayed. | Pass |  |  
 
-### Post-conditions
+**Post-conditions**
 No chat with the name "eiei" is found, and the "Not Found" message appears.
 
 ---
 
 ## Test Suite 2 – Incident Importance Ranking (Add & Rank Incident)
+TC_INCIDENT_ADD_02 , TC_INCIDENT_ADD_01  
+
+---
+
 ### Test Case 1
 **Test Case ID:** TC_INCIDENT_ADD_01  
 **Test Priority:** High  
@@ -78,12 +82,12 @@ No chat with the name "eiei" is found, and the "Not Found" message appears.
 
 ---
 
-### Pre-conditions
+**Pre-conditions**
 - User can log in to the **GoodPoliz** system.
 - User has successfully navigated to the **Incident Importance Ranking** page.
 - The **Add New Incident** form is visible.
 
-### Dependencies
+**Dependencies**
 Login page, Dashboard/Home page, Incident Importance Ranking page, Backend incident API
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
@@ -95,7 +99,7 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Backend incid
 | 5 | In the **Note** field, enter additional details. | `Smoke coming from 3rd floor, possible fire.` | The **Note** field accepts and shows the entered text. | The **Note** field accepts and shows the entered text. | Pass |  |
 | 6 | Click the **Add & Rank Incident** button. | – | System validates all fields, saves the incident, calculates the score, and shows the new incident in the list with rank **High**. | System validates all fields, saves the incident, calculates the score, and shows the new incident in the list with rank **High**. | Pass |  |
 
-### Post-conditions
+**Post-conditions**
 - A new incident with type **Fire** at **ICT, Mahidol University** and time **06/11/2025 10:30** is stored in the system.
 - The incident appears in the incident list with its importance rank displayed as **High**.
 
@@ -115,12 +119,12 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Backend incid
 
 ---
 
-### Pre-conditions
+**Pre-conditions**
 - User can log in to the **GoodPoliz** system.
 - User has successfully navigated to the **Incident Importance Ranking** page.
 - The **Add New Incident** form is visible.
 
-### Dependencies
+**Dependencies**
 Login page, Dashboard/Home page, Incident Importance Ranking page, Frontend form validation
 
 | Step | Test Steps | Test Data | Expected Result | Actual Result | Status (Pass/Fail) | Notes |
@@ -132,7 +136,7 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Frontend form
 | 5 | In the **Note** field, enter additional details. | `Smoke coming from 3rd floor, possible fire.` | The **Note** field accepts and shows the entered text. | The **Note** field accepts and shows the entered text. | Pass |  |
 | 6 | Click the **Add & Rank Incident** button. | – | System does **not** submit the form. A snackbar/message appears with text `Place is required`. No new incident is saved; the incident list remains unchanged. | System does not submit the form. A snackbar/message appears with text `Place is required`. No new incident is saved; the incident list remains unchanged. | Pass |  |
 
-### Post-conditions
+**Post-conditions**
 - No new incident is created in the system.
 - The user is clearly informed that the **Place** field is required before an incident can be created.
 
