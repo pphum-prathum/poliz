@@ -202,6 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             _buildDashboardCard(
+              key: const ValueKey('AIRankingCard'),
               icon: Icons.warning_amber_rounded,
               title: 'AI Incident Ranking',
               color: Colors.orange,
