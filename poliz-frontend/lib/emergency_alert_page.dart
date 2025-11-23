@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 
 // ต้อง import Incident และ RankBand Class จาก main.dart เพื่อใช้ Data Model
