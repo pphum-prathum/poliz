@@ -371,7 +371,9 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
   void _addIncident() async {
     if (_placeCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Place is required')),
+        const SnackBar(
+          content: Text('Place is required')
+        ),
       );
       return;
     }
@@ -534,6 +536,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                 Expanded(
                   flex: 2,
                   child: TextField(
+                    key: const ValueKey('searchField'),
                     controller: _searchCtrl,
                     onChanged: (_) => _applySearch(),
                     decoration: const InputDecoration(
@@ -667,6 +670,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
+              key: ValueKey('typeDropdown'),
               value: _type,
               items: _types
                   .map((t) => DropdownMenuItem(value: t, child: Text(t)))
@@ -680,6 +684,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             ),
             const SizedBox(height: 10),
             TextField(
+              key: const ValueKey('placeField'),
               controller: _placeCtrl,
               decoration: const InputDecoration(
                 labelText: 'Place',
@@ -691,6 +696,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             const SizedBox(height: 10),
             // NEW: Latitude (optional)
             TextField(
+              key: const ValueKey('latitudeField'),
               controller: _latCtrl,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -706,6 +712,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             const SizedBox(height: 10),
             // NEW: Longitude (optional)
             TextField(
+              key: const ValueKey('longtitudeField'),
               controller: _lngCtrl,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -733,6 +740,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton.tonalIcon(
+                  key: const ValueKey('datetimePicker'),
                   onPressed: () => _pickDateTime(context),
                   icon: const Icon(Icons.calendar_today),
                   label: const Text('Pick'),
@@ -741,6 +749,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
             ),
             const SizedBox(height: 10),
             TextField(
+              key: const ValueKey('notesField'),
               controller: _notesCtrl,
               minLines: 3,
               maxLines: 5,
@@ -771,6 +780,7 @@ class _IncidentHomePageState extends State<IncidentHomePage> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
+                  key: const ValueKey('submitIncident'),
                   onPressed: _addIncident,
                   icon: const Icon(Icons.star_border),
                   label: const Text('Add & Rank'),
