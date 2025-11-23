@@ -93,12 +93,12 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Backend incid
 | 1 | Log in and click **"AI Incident Ranking"** from the main menu to open the Incident Importance Ranking page. | Email/Pass: **Earn / Earn** | System logs in successfully navigates to the the Incident Importance Ranking page with the Add New Incident form. | System logs in successfully navigates to the the Incident Importance Ranking page with the Add New Incident form. | Pass |  |
 | 2 | In the **Type** field, select incident type. | `Fire` | The **Type** field accepts and shows `Fire`. | The **Type** field accepts and shows `Fire`. | Pass |  |
 | 3 | In the **Place** field, enter the incident location. | `ICT, Mahidol University` | The **Place** field accepts and shows `ICT, Mahidol University`. | The **Place** field accepts and shows `ICT, Mahidol University`. | Pass |  |
-| 4 | In the **Time** field, enter the incident time. | DateTime.now() | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | The **Time** field accepts and shows current time `dd/mm/yyyy hh:MM` in the correct format. | Pass |  |
+| 4 | In the **Time** field, enter the incident time. | `06/11/2025 10:30` | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | Pass |  |
 | 5 | In the **Note** field, enter additional details. | `Smoke coming from 3rd floor, possible fire.` | The **Note** field accepts and shows the entered text. | The **Note** field accepts and shows the entered text. | Pass |  |
 | 6 | Click the **Add & Rank Incident** button. | – | System validates all fields, saves the incident, calculates the score, and shows the new incident in the list with rank **High**. | System validates all fields, saves the incident, calculates the score, and shows the new incident in the list with rank **High**. | Pass |  |
 
 **Post-conditions**
-- A new incident with type **Fire** at **ICT, Mahidol University** and current time is stored in the system.
+- A new incident with type **Fire** at **ICT, Mahidol University** and time **06/11/2025 10:30** is stored in the system.
 - The incident appears in the incident list with its importance rank displayed as **High**.
 
 ---
@@ -128,7 +128,7 @@ Login page, Dashboard/Home page, Incident Importance Ranking page, Frontend form
 | 1 | Log in and click **"AI Incident Ranking"** from the main menu to open the Incident Importance Ranking page. | Email/Pass: **Earn / Earn** | System logs in successfully and navigate to the Incident Importance Ranking page with the Add New Incident form. | System logs in successfully and navigate to the Incident Importance Ranking page with the Add New Incident form. | Pass |  |
 | 2 | In the **Type** field, select incident type. | `Fire` | The **Type** field accepts and shows `Fire`. | The **Type** field accepts and shows `Fire`. | Pass |  |
 | 3 | Leave the **Place** field empty. | *(empty)* | The **Place** field remains empty. | The **Place** field remains empty. | Pass |  |
-| 4 | In the **Time** field, enter the incident time. | DateTime.now() | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | The **Time** field accepts and shows current time `dd/mm/yyyy hh:MM` in the correct format. | Pass |  |
+| 4 | In the **Time** field, enter the incident time. | `06/11/2025 10:30` | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | The **Time** field accepts and shows `06/11/2025 10:30` in the correct format. | Pass |  |
 | 5 | In the **Note** field, enter additional details. | `Smoke coming from 3rd floor, possible fire.` | The **Note** field accepts and shows the entered text. | The **Note** field accepts and shows the entered text. | Pass |  |
 | 6 | Click the **Add & Rank Incident** button. | – | System does **not** submit the form. A snackbar/message appears with text `Place is required`. No new incident is saved; the incident list remains unchanged. | System does not submit the form. A snackbar/message appears with text `Place is required`. No new incident is saved; the incident list remains unchanged. | Pass |  |
 

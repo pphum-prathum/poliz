@@ -73,22 +73,48 @@ void main() {
 
   });
 
-  // testWidgets('TC_INCIDENT_ADD_02', (WidgetTester tester) async {
-  //   await loginAndGoToIncidentImportantRanking(tester);
+  testWidgets('TC_INCIDENT_ADD_02', (WidgetTester tester) async {
+  
+      // Select Incident Type
+    await tester.tap(find.byKey(const ValueKey('typeDropdown')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fire').last);
+    await tester.pumpAndSettle();
 
-  //   // Select Incident Type
-  //   await tester.tap(find.byKey(const ValueKey('typeDropdown')));
-  //   await tester.pumpAndSettle();
-  //   await tester.tap(find.text('Fire').last);
-  //   await tester.pumpAndSettle();
+    // open picker
+    await tester.tap(find.byKey(const ValueKey('datetimePicker')));
+    await tester.pumpAndSettle();
 
-  //   // Missing required fields → Expect validation error
-  //   await tester.enterText(find.byKey(const ValueKey('notesField')),
-  //       'Smoke coming from 3rd floor, possible fire.');
+    // --- DATE PICKER ---
+    await tester.tap(find.text(6.toString()));
+    await tester.tap(find.text('OK'));  // close date picker
+    await tester.pumpAndSettle(Duration(seconds: 2));
 
-  //   await tester.tap(find.byKey(const ValueKey('submitIncident')));
-  //   await tester.pumpAndSettle(const Duration(seconds: 1));
+    // --- TIME PICKER ---
+    await tester.tap(find.byTooltip('Switch to text input mode'));
+    await tester.pumpAndSettle();
 
-  //   expect(find.text('Place is required'), findsOne);
-  // });
+    // The hour and minute inputs don't have a key or tooltip so we find them
+    // by type and then use the index to enter the value.
+    final inputs = find.byType(TextFormField);
+
+    await tester.enterText(inputs.at(0), 10.toString());
+    await tester.enterText(inputs.at(1), 30.toString());
+
+    await tester.tap(find.text('AM'));  // toggle PM
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+
+    // Enter Notes
+    await tester.enterText(find.byKey(const ValueKey('notesField')), 'Smoke coming from 3rd floor, possible fire.');
+    await tester.pumpAndSettle();
+
+    // Submit
+    await tester.tap(find.byKey(const ValueKey('submitIncident')));
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+
+    expect(find.text('Place is required'), findsOne);
+  });
 }
