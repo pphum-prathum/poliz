@@ -72,9 +72,6 @@ void main() {
     matching: find.text('Fire @ ICT, Mahidol University'),
     ),
     findsOneWidget,);
-    
-  
-    // expect(find.text('Fire @ ICT, Mahidol University'), findsOne);
 
   });
 
@@ -128,6 +125,5 @@ void main() {
     ),
     findsOneWidget);
 
-    // expect(find.text('Place is required'), findsOne);
   });
 }

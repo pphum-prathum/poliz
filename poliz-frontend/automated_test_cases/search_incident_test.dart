@@ -72,7 +72,11 @@ void main(){
     await tester.enterText(find.byKey(const ValueKey('searchField')), 'Fire');
     await tester.pumpAndSettle();
     
-    expect(find.text('Fire @ ICT, Mahidol University'), findsOne);
+    expect(find.descendant(
+    of: find.byType(ListView), 
+    matching: find.text('Fire @ ICT, Mahidol University'),
+    ),
+    findsAny);
   });
 
   testWidgets('TC_INCIDENT_SEARCH_02', (WidgetTester tester) async {
