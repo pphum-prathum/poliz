@@ -157,6 +157,37 @@ class CrimeIncidentControllerTest {
                 + body.size() + " incident(s): [] (no matches)");
     }
 
+    // -------------------------------------------------------------------------
+    // Test 5: type is blank (e.g., "   " or "")
+    // Technique: Logic coverage (clause type.isBlank() TRUE).
+    // -------------------------------------------------------------------------
+
+    /**
+     * When type is blank (e.g., only whitespace),
+     * the second clause of the predicate (type.isBlank()) is TRUE.
+     * According to the controller logic, this should be treated the same as
+     * "All Types" and return all incidents without filtering.
+     */
+    @Test
+    @DisplayName("getCrimeIncidents returns all when type is blank")
+    void returnsAll_whenTypeIsBlank() {
+        when(incidentService.getAllIncidents()).thenReturn(sampleIncidents());
+
+        ResponseEntity<List<CrimeIncidentDto>> response =
+                controller.getCrimeIncidents("   ");
+
+        verify(incidentService, times(1)).getAllIncidents();
+        List<CrimeIncidentDto> body = response.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body).hasSize(3);
+
+        String types = body.stream()
+                .map(CrimeIncidentDto::type)
+                .collect(Collectors.joining(", "));
+        System.out.println("LOG: [CrimeIncidentController] type='(blank)' -> "
+                + body.size() + " incident(s): [" + types + "]");
+    }
+
     /**
      * List of sample incidents used in tests
      * that exercise both "return all" and filtered branches.
