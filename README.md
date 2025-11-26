@@ -23,26 +23,26 @@ Each suite includes multiple test cases designed using input space partitioning 
 
 ### Unit Test Suites Overview
 
-#### **1. ChatControllerTest**
-Validates:
-- Sending messages between two users
-- Creating a new chat if none exists
-- Basic input validation for message text (empty vs non-empty)
-- Handling failures when saving messages
-
-#### **2. CrimeIncidentControllerTest**
+#### **1. CrimeIncidentControllerTest**
 Validates:
 - `getCrimeIncidents(type)` filtering logic
 - Treating `null`, blank, and "All Types" as “no filter”
 - Returning only incidents matching a specific type (e.g., "Traffic Accident")
 - Returning an empty list when no incident matches the requested type  
 
-#### **3. IncidentServiceTest**
+#### **2. IncidentServiceTest**
 Validates:
 - The importance score calculation in `addNewIncident(Incident)`
 - How incident type, time of day, place, and notes (severity keywords) contribute to the final score
 - Mapping from score → rank level (`LOW`, `MEDIUM`, `HIGH`) and `isRanked` / `isNew` flags
 - Repository interaction for saving the enriched incident
+
+#### **3. ChatControllerTest**
+Validates:
+- Sending messages between two users
+- Creating a new chat if none exists
+- Basic input validation for message text (empty vs non-empty)
+- Handling failures when saving messages
 
 ### Folder Structure
 ```text
