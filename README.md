@@ -28,7 +28,10 @@ Validates:
 - `getCrimeIncidents(type)` filtering logic
 - Treating `null`, blank, and "All Types" as “no filter”
 - Returning only incidents matching a specific type (e.g., "Traffic Accident")
-- Returning an empty list when no incident matches the requested type  
+- Returning an empty list when no incident matches the requested type
+
+Coverage:
+![Dashboard Screenshot](statement_coverage/crimecontroller.jpg)
 
 #### **2. IncidentServiceTest**
 Validates:
@@ -37,12 +40,18 @@ Validates:
 - Mapping from score → rank level (`LOW`, `MEDIUM`, `HIGH`) and `isRanked` / `isNew` flags
 - Repository interaction for saving the enriched incident
 
+Coverage:
+![Dashboard Screenshot](statement_coverage/incidentservice.jpg)
+
 #### **3. ChatControllerTest**
 Validates:
 - Sending messages between two users
 - Creating a new chat if none exists
 - Basic input validation for message text (empty vs non-empty)
 - Handling failures when saving messages
+
+Coverage:
+![Dashboard Screenshot](statement_coverage/chatcontroller.jpg)
 
 ### Folder Structure
 ```text
