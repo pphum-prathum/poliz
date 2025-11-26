@@ -67,8 +67,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('submitIncident')));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    // EXPECT: New incident appears
-    expect(find.text('Fire @ ICT, Mahidol University'), findsOne);
+    expect(find.descendant(
+    of: find.byType(ListView), 
+    matching: find.text('Fire @ ICT, Mahidol University'),
+    ),
+    findsOneWidget,);
+    
+  
+    // expect(find.text('Fire @ ICT, Mahidol University'), findsOne);
 
   });
 
@@ -116,6 +122,12 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('submitIncident')));
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('Place is required'), findsOne);
+    expect(find.descendant(
+    of: find.byType(SnackBar), 
+    matching: find.text('Place is required'),
+    ),
+    findsOneWidget);
+
+    // expect(find.text('Place is required'), findsOne);
   });
 }
